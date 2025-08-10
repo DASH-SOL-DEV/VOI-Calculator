@@ -1,0 +1,116 @@
+.voi-calculator-container {
+    font-family: "Neue Montreal", sans-serif;
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 30px;
+    background-color: #f9f9f9;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+}
+
+.voi-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.voi-header h2 {
+    font-size: 28px;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.voi-header p {
+    font-size: 16px;
+    color: #666;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    font-weight: 500;
+    margin-bottom: 8px;
+    color: #333;
+}
+
+.form-group input[type="text"],
+.form-group input[type="email"],
+.form-group input[type="url"],
+.form-group input[type="number"] {
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+    font-family: "Neue Montreal", sans-serif;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #002D5B; /* Main Color */
+    box-shadow: 0 0 0 2px rgba(0, 45, 91, 0.2);
+}
+
+.form-submit {
+    text-align: center;
+    margin-top: 30px;
+}
+
+.voi-submit-button {
+    background-color: #002D5B; /* Main Color */
+    color: #fff;
+    border: none;
+    padding: 15px 30px;
+    font-size: 18px;
+    font-weight: 500;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    font-family: "Neue Montreal", sans-serif;
+}
+
+.voi-submit-button:hover,
+.voi-submit-button:focus {
+    background-color: #001f3f; /* Darker shade */
+}
+
+.voi-submit-button:disabled {
+    background-color: #999;
+    cursor: not-allowed;
+}
+
+.voi-form-message {
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.voi-form-message.success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.voi-form-message.error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    .voi-calculator-container {
+        padding: 20px;
+    }
+}
