@@ -1,0 +1,13 @@
+.header-info { text-align: center; margin-bottom: 20px; }
+.header-info h1 { font-size: 14px; font-weight: bold; }
+.header-info p { font-size: 10px; }
+.section-title { font-size: 10px; font-weight: bold; background-color: #002060; color: #FFFFFF; padding: 5px; text-align: left; }
+.subsection-title { font-size: 10px; font-weight: bold; background-color: #BDD7EE; padding: 5px; text-align: left; }
+.summary-section td { background-color: #F2F2F2; }
+.summary-total td { background-color: #BDD7EE; font-weight: bold; }
+.roi-table { width: 100%; border-collapse: collapse; margin-top: 0; margin-bottom: 10px; border: 1px solid #000; }
+.roi-table th, .roi-table td { border: 1px solid #000000; padding: 8px; vertical-align: middle; }
+.roi-table th { font-weight: bold; text-align: center; background-color: #BDD7EE; }
+.value-col { text-align: right; }
+.label-col { text-align: left; }
+.dollar-sign { text-align: center; }

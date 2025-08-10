@@ -15,21 +15,24 @@ class VOI_Calculator_PDF_Generator {
         $cost_per_tb = 500;
         $employee_yearly_cost = 150000;
         $work_hours_yearly = 1880;
-        $employee_hourly_rate = 80;
+        $employee_hourly_rate = 80; // This is for display, the calculation below is more precise.
+        
+        // Corrected Calculation: Use the effective hourly rate based on burdened cost
+        $effective_hourly_rate = $employee_yearly_cost / $work_hours_yearly;
 
         // Cost Avoidance
         $reuse_space_savings = 0.02 * $total_tb * $cost_per_tb;
         $improved_processes_savings = 0.02 * $total_tb * $cost_per_tb;
         $improve_buying_accuracy_savings = 0.01 * $total_tb * $cost_per_tb;
 
-        // Personnel Savings (Hrs/Weekly * 52 weeks * Hourly Rate)
-        $time_building_reports_savings = 4 * 52 * $employee_hourly_rate;
-        $time_planning_savings = 2 * 52 * $employee_hourly_rate;
-        $modeling_trends_savings = 2 * 52 * $employee_hourly_rate;
-        $improved_problem_resolution_savings = 4 * 52 * $employee_hourly_rate;
-        $capacity_report_collection_savings = 4 * 52 * $employee_hourly_rate;
-        $service_improvement_savings = 6 * 52 * $employee_hourly_rate;
-        $automation_savings = 4 * 52 * $employee_hourly_rate;
+        // Personnel Savings (Hrs/Weekly * 52 weeks * Effective Hourly Rate)
+        $time_building_reports_savings = 4 * 52 * $effective_hourly_rate;
+        $time_planning_savings = 2 * 52 * $effective_hourly_rate;
+        $modeling_trends_savings = 2 * 52 * $effective_hourly_rate;
+        $improved_problem_resolution_savings = 4 * 52 * $effective_hourly_rate;
+        $capacity_report_collection_savings = 4 * 52 * $effective_hourly_rate;
+        $service_improvement_savings = 6 * 52 * $effective_hourly_rate;
+        $automation_savings = 4 * 52 * $effective_hourly_rate;
 
         // Operational Efficiencies
         $outage_avoidance_savings = 250000; // Static value from sample
@@ -53,79 +56,94 @@ class VOI_Calculator_PDF_Generator {
         $pdf->SetTitle('Visual Storage Intelligence ROI Worksheet');
         $pdf->setPrintHeader(false);
         $pdf->setPrintFooter(false);
-        $pdf->SetMargins(15, 15, 15);
-        $pdf->SetAutoPageBreak(TRUE, 15);
+        $pdf->SetMargins(10, 10, 10);
+        $pdf->SetAutoPageBreak(TRUE, 10);
 
         // Add a page
         $pdf->AddPage();
 
         // Set font
-        $pdf->SetFont('helvetica', '', 10);
+        $pdf->SetFont('helvetica', '', 9);
 
         // --- PDF Content ---
-        // Using the HTML structure provided by the user
+        // Rebuilt HTML to closely match the provided PDF sample
         $html = '
         <style>
             body { font-family: sans-serif; color: #000; }
-            h1 { font-family: ff1; font-size: 16px; font-weight: normal; }
-            h2 { font-family: ff1; font-size: 14px; font-weight: bold; margin-top: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px;}
-            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-            th { background-color: #f2f2f2; font-weight: bold; }
-            .section-title { font-size: 14px; font-weight: bold; }
+            .header-info { text-align: center; margin-bottom: 20px; }
+            .header-info h1 { font-size: 14px; font-weight: bold; }
+            .header-info p { font-size: 10px; }
+            .section-title { font-size: 10px; font-weight: bold; background-color: #002060; color: #FFFFFF; padding: 5px; text-align: left; }
+            .subsection-title { font-size: 10px; font-weight: bold; background-color: #BDD7EE; padding: 5px; text-align: left; }
+            .summary-section td { background-color: #F2F2F2; }
+            .summary-total td { background-color: #BDD7EE; font-weight: bold; }
+            table { width: 100%; border-collapse: collapse; margin-top: 0; margin-bottom: 10px; }
+            th, td { border: 1px solid #000000; padding: 8px; }
+            th { font-weight: bold; text-align: center; background-color: #BDD7EE; }
             .value-col { text-align: right; }
-            .header-info { margin-bottom: 20px; }
+            .label-col { text-align: left; }
+            .dollar-sign { text-align: center; }
         </style>
         <body>
             <div class="header-info">
                 <h1>Visual Storage Intelligence ROI Worksheet</h1>
-                <p>Prepared for: ' . esc_html($this->data['company_name']) . '</p>
-                <p>Date: ' . date('m/d/Y') . '</p>
+                <p>Prepared for: ' . esc_html($this->data['company_name']) . ' (Estimated Value)</p>
+                <p>' . date('m/d/Y') . '</p>
             </div>
 
-            <h2>Assumptions</h2>
             <table>
-                <tr><th width="70%">Current Environment:</th><th width="30%" class="value-col"></th></tr>
-                <tr><td>Total Space (TB)</td><td class="value-col">' . number_format($total_tb) . '</td></tr>
-                <tr><td>Cost per TB</td><td class="value-col">$' . number_format($cost_per_tb, 2) . '</td></tr>
-                <tr><th width="70%">Employee Cost:</th><th width="30%" class="value-col"></th></tr>
-                <tr><td>Fully burdened yearly cost</td><td class="value-col">$' . number_format($employee_yearly_cost, 2) . '</td></tr>
-                <tr><td>Work hours yearly</td><td class="value-col">' . number_format($work_hours_yearly) . '</td></tr>
-                <tr><td>Hourly rate</td><td class="value-col">$' . number_format($employee_hourly_rate, 2) . '</td></tr>
+                <tr><td colspan="3" class="section-title">Assumptions</td></tr>
+                <tr><td colspan="3" class="subsection-title">Current Environment:</td></tr>
+                <tr><td width="60%" class="label-col">Total Space (TB)</td><td width="10%" class="dollar-sign"></td><td width="30%" class="value-col">' . number_format($total_tb) . '</td></tr>
+                <tr><td class="label-col">Cost per TB</td><td class="dollar-sign">$</td><td class="value-col">' . number_format($cost_per_tb, 2) . '</td></tr>
+                <tr><td colspan="3" class="subsection-title">Employee Cost:</td></tr>
+                <tr><td class="label-col">Fully burdened yearly cost</td><td class="dollar-sign">$</td><td class="value-col">' . number_format($employee_yearly_cost, 2) . '</td></tr>
+                <tr><td class="label-col">Work hours yearly</td><td class="dollar-sign"></td><td class="value-col">' . number_format($work_hours_yearly) . '</td></tr>
+                <tr><td class="label-col">Hourly rate</td><td class="dollar-sign">$</td><td class="value-col">' . number_format($employee_hourly_rate, 2) . '</td></tr>
             </table>
 
-            <h2>Cost Avoidance</h2>
             <table>
-                <tr><th width="40%"></th><th width="20%" class="value-col">% of Total Space</th><th width="20%" class="value-col">Space Savings (TB)</th><th width="20%" class="value-col">Annual Savings</th></tr>
-                <tr><td>Reuse of Orphaned Space</td><td class="value-col">2%</td><td class="value-col">' . number_format(0.02 * $total_tb) . '</td><td class="value-col">$' . number_format($reuse_space_savings, 2) . '</td></tr>
-                <tr><td>Improved Processes</td><td class="value-col">2.0%</td><td class="value-col">' . number_format(0.02 * $total_tb) . '</td><td class="value-col">$' . number_format($improved_processes_savings, 2) . '</td></tr>
-                <tr><td>Improve Buying Accuracy</td><td class="value-col">1.0%</td><td class="value-col">' . number_format(0.01 * $total_tb) . '</td><td class="value-col">$' . number_format($improve_buying_accuracy_savings, 2) . '</td></tr>
+                <thead>
+                    <tr><th width="40%" class="section-title label-col">Cost Avoidance</th><th width="15%" class="section-title">% of Total Space</th><th width="15%" class="section-title">Space Savings (TB)</th><th width="10%" class="section-title"></th><th width="20%" class="section-title">Annual Savings</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td class="label-col">Reuse of Orphaned Space</td><td class="value-col">2.0%</td><td class="value-col">' . number_format(0.02 * $total_tb) . '</td><td class="dollar-sign">$</td><td class="value-col">' . number_format($reuse_space_savings, 2) . '</td></tr>
+                    <tr><td class="label-col">Improved Processes</td><td class="value-col">2.0%</td><td class="value-col">' . number_format(0.02 * $total_tb) . '</td><td class="dollar-sign">$</td><td class="value-col">' . number_format($improved_processes_savings, 2) . '</td></tr>
+                    <tr><td class="label-col">Improve Buying Accuracy</td><td class="value-col">1.0%</td><td class="value-col">' . number_format(0.01 * $total_tb) . '</td><td class="dollar-sign">$</td><td class="value-col">' . number_format($improve_buying_accuracy_savings, 2) . '</td></tr>
+                </tbody>
             </table>
             
-            <h2>Personnel Savings</h2>
             <table>
-                <tr><th width="40%"></th><th width="20%" class="value-col">Hrs/Weekly</th><th width="20%" class="value-col">Hrs/Yearly</th><th width="20%" class="value-col">Annual Savings</th></tr>
-                <tr><td>Time spent building reports</td><td class="value-col">4</td><td class="value-col">208</td><td class="value-col">$' . number_format($time_building_reports_savings, 2) . '</td></tr>
-                <tr><td>Time Spent planning</td><td class="value-col">2</td><td class="value-col">104</td><td class="value-col">$' . number_format($time_planning_savings, 2) . '</td></tr>
-                <tr><td>Modeling Trends</td><td class="value-col">2</td><td class="value-col">104</td><td class="value-col">$' . number_format($modeling_trends_savings, 2) . '</td></tr>
-                <tr><td>Improved problem resolution</td><td class="value-col">4</td><td class="value-col">208</td><td class="value-col">$' . number_format($improved_problem_resolution_savings, 2) . '</td></tr>
-                <tr><td>Capacity Report Collection</td><td class="value-col">4</td><td class="value-col">208</td><td class="value-col">$' . number_format($capacity_report_collection_savings, 2) . '</td></tr>
-                <tr><td>Service Improvement</td><td class="value-col">6</td><td class="value-col">312</td><td class="value-col">$' . number_format($service_improvement_savings, 2) . '</td></tr>
-                <tr><td>Automation</td><td class="value-col">4</td><td class="value-col">208</td><td class="value-col">$' . number_format($automation_savings, 2) . '</td></tr>
+                <thead>
+                    <tr><th width="40%" class="section-title label-col">Personnel Savings</th><th width="15%" class="section-title">Hrs/Weekly</th><th width="15%" class="section-title">Hrs/Yearly</th><th width="10%" class="section-title"></th><th width="20%" class="section-title">Annual Savings</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td class="label-col">Time spent building reports</td><td class="value-col">4</td><td class="value-col">208</td><td class="dollar-sign">$</td><td class="value-col">' . number_format($time_building_reports_savings, 2) . '</td></tr>
+                    <tr><td class="label-col">Time Spent planning</td><td class="value-col">2</td><td class="value-col">104</td><td class="dollar-sign">$</td><td class="value-col">' . number_format($time_planning_savings, 2) . '</td></tr>
+                    <tr><td class="label-col">Modeling Trends</td><td class="value-col">2</td><td class="value-col">104</td><td class="dollar-sign">$</td><td class="value-col">' . number_format($modeling_trends_savings, 2) . '</td></tr>
+                    <tr><td class="label-col">Improved problem resolution</td><td class="value-col">4</td><td class="value-col">208</td><td class="dollar-sign">$</td><td class="value-col">' . number_format($improved_problem_resolution_savings, 2) . '</td></tr>
+                    <tr><td class="label-col">Capacity Report Collection</td><td class="value-col">4</td><td class="value-col">208</td><td class="dollar-sign">$</td><td class="value-col">' . number_format($capacity_report_collection_savings, 2) . '</td></tr>
+                    <tr><td class="label-col">Service Improvement</td><td class="value-col">6</td><td class="value-col">312</td><td class="dollar-sign">$</td><td class="value-col">' . number_format($service_improvement_savings, 2) . '</td></tr>
+                    <tr><td class="label-col">Automation</td><td class="value-col">4</td><td class="value-col">208</td><td class="dollar-sign">$</td><td class="value-col">' . number_format($automation_savings, 2) . '</td></tr>
+                </tbody>
             </table>
 
-            <h2>Operational Efficiencies</h2>
             <table>
-                <tr><th width="70%"></th><th width="30%" class="value-col">Annual Savings</th></tr>
-                <tr><td>Outage Avoidance</td><td class="value-col">$' . number_format($outage_avoidance_savings, 2) . '</td></tr>
+                <thead>
+                    <tr><th width="70%" class="section-title label-col">Operational Efficiencies</th><th width="10%" class="section-title"></th><th width="20%" class="section-title">Annual Savings</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td class="label-col">Outage Avoidance</td><td class="dollar-sign">$</td><td class="value-col">' . number_format($outage_avoidance_savings, 2) . '</td></tr>
+                </tbody>
             </table>
 
-            <h2>Summary</h2>
-            <table>
-                <tr><td width="70%"><strong>Annual Savings</strong></td><td width="30%" class="value-col"><strong>$' . number_format($total_savings, 2) . '</strong></td></tr>
-                <tr><td>VSI Annual Cost</td><td class="value-col">$' . number_format($vsi_annual_cost, 2) . '</td></tr>
-                <tr><td>Payback (months)</td><td class="value-col">' . number_format($payback_months, 2) . '</td></tr>
-                <tr><td><strong>Annual ROI</strong></td><td class="value-col"><strong>' . number_format($annual_roi, 0) . '%</strong></td></tr>
+            <br/><br/>
+
+            <table class="summary-section">
+                <tr class="summary-total"><td width="70%" class="label-col">Annual Savings</td><td width="10%" class="dollar-sign">$</td><td width="20%" class="value-col">' . number_format($total_savings, 2) . '</td></tr>
+                <tr><td class="label-col">VSI Annual Cost</td><td class="dollar-sign">$</td><td class="value-col">' . number_format($vsi_annual_cost, 2) . '</td></tr>
+                <tr><td class="label-col">Payback (months)</td><td class="dollar-sign"></td><td class="value-col">' . number_format($payback_months, 2) . '</td></tr>
+                <tr class="summary-total"><td class="label-col">Annual ROI</td><td class="dollar-sign"></td><td class="value-col">' . number_format($annual_roi, 0) . '%</td></tr>
             </table>
         </body>';
 
@@ -144,7 +162,7 @@ class VOI_Calculator_PDF_Generator {
         try {
             // Close and output PDF document
             $pdf->Output($filepath, 'F');
-            return ['path' => $filepath, 'url' => $fileurl];
+            return ['path' => $filepath, 'url' => $fileurl, 'html' => $html];
         } catch (Exception $e) {
             return new WP_Error('pdf_generation_failed', $e->getMessage());
         }

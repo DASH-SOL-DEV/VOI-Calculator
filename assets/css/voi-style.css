@@ -1,13 +1,16 @@
+/* Main container for the dark theme */
 .voi-calculator-container {
-    font-family: "Neue Montreal", sans-serif;
+    font-family: "Neue Montreal", Sans-serif;
     max-width: 800px;
     margin: 40px auto;
-    padding: 30px;
-    background-color: #f9f9f9;
-    border: 1px solid #e0e0e0;
+    padding: 40px;
+    background-color: #091F00 !important; /* Main dark green color */
+    color: #f0f0f0;
     border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
 }
 
+/* Header styles */
 .voi-header {
     text-align: center;
     margin-bottom: 30px;
@@ -15,19 +18,20 @@
 
 .voi-header h2 {
     font-size: 28px;
-    color: #333;
+    color: #ffffff;
     margin-bottom: 10px;
 }
 
 .voi-header p {
     font-size: 16px;
-    color: #666;
+    color: #c0c0c0;
 }
 
+/* Form layout */
 .form-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 20px;
+    gap: 25px;
 }
 
 .form-group {
@@ -38,47 +42,66 @@
 .form-group label {
     font-weight: 500;
     margin-bottom: 8px;
-    color: #333;
+    color: #ffffff;
 }
 
-.form-group input[type="text"],
-.form-group input[type="email"],
-.form-group input[type="url"],
-.form-group input[type="number"] {
+/* Input field styles for dark theme */
+.form-group input {
     padding: 12px;
-    border: 1px solid #ccc;
+    border: 1px solid #444;
     border-radius: 4px;
     font-size: 16px;
-    font-family: "Neue Montreal", sans-serif;
+    font-family: "Neue Montreal", Sans-serif;
+    background-color: rgba(255, 255, 255, 0.05);
+    color: #ffffff;
+    transition: all 0.3s ease;
+}
+
+.form-group input::placeholder {
+    color: #888;
 }
 
 .form-group input:focus {
     outline: none;
-    border-color: #002D5B; /* Main Color */
-    box-shadow: 0 0 0 2px rgba(0, 45, 91, 0.2);
+    border-color: #BDD7EE; /* A light accent color for focus */
+    box-shadow: 0 0 0 3px rgba(189, 215, 238, 0.2);
 }
 
+/* Button styles */
 .form-submit {
     text-align: center;
-    margin-top: 30px;
+    margin-top: 40px;
 }
 
-.voi-submit-button {
-    background-color: #002D5B; /* Main Color */
-    color: #fff;
+.voi-submit-button, .voi-download-button, .voi-calculate-again-button {
+    background-color: #BDD7EE; /* Light blue accent */
+    color: #091F00;
     border: none;
     padding: 15px 30px;
     font-size: 18px;
-    font-weight: 500;
+    font-weight: bold;
     border-radius: 5px;
     cursor: pointer;
-    transition: background-color 0.3s ease;
-    font-family: "Neue Montreal", sans-serif;
+    transition: all 0.3s ease;
+    font-family: "Neue Montreal", Sans-serif;
+    text-decoration: none;
+    display: inline-block;
+    margin: 10px;
 }
 
-.voi-submit-button:hover,
-.voi-submit-button:focus {
-    background-color: #001f3f; /* Darker shade */
+.voi-calculate-again-button {
+    background-color: #6c757d;
+    color: #ffffff;
+}
+
+.voi-submit-button:hover, .voi-download-button:hover {
+    background-color: #a7c0d6;
+    transform: translateY(-2px);
+}
+
+.voi-calculate-again-button:hover {
+    background-color: #5a6268;
+    transform: translateY(-2px);
 }
 
 .voi-submit-button:disabled {
@@ -86,23 +109,30 @@
     cursor: not-allowed;
 }
 
-.voi-form-message {
+/* Error message styling */
+.voi-form-message.error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
     padding: 15px;
     margin-bottom: 20px;
     border-radius: 4px;
     text-align: center;
 }
 
-.voi-form-message.success {
-    background-color: #d4edda;
-    color: #155724;
-    border: 1px solid #c3e6cb;
+/* Results View styling */
+#voi-calculator-results {
+    background-color: #ffffff;
+    color: #000000; /* Reset text color for the results */
+    padding: 20px;
+    border-radius: 8px;
 }
 
-.voi-form-message.error {
-    background-color: #f8d7da;
-    color: #721c24;
-    border: 1px solid #f5c6cb;
+.results-actions {
+    text-align: center;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
 }
 
 /* Responsive adjustments */
@@ -113,23 +143,4 @@
     .voi-calculator-container {
         padding: 20px;
     }
-}
-
-.pdf-download-link {
-    font-weight: bold;
-    color: #002D5B;
-    text-decoration: underline;
-}
-
-.pdf-download-link:hover {
-    color: #001f3f;
-}
-.pdf-download-link {
-    font-weight: bold;
-    color: #002D5B;
-    text-decoration: underline;
-}
-
-.pdf-download-link:hover {
-    color: #001f3f;
 }
