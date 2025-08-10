@@ -114,3 +114,22 @@
         padding: 20px;
     }
 }
+
+.pdf-download-link {
+    font-weight: bold;
+    color: #002D5B;
+    text-decoration: underline;
+}
+
+.pdf-download-link:hover {
+    color: #001f3f;
+}
+.pdf-download-link {
+    font-weight: bold;
+    color: #002D5B;
+    text-decoration: underline;
+}
+
+.pdf-download-link:hover {
+    color: #001f3f;
+}

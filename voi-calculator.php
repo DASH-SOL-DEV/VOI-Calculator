@@ -3,7 +3,7 @@
  * Plugin Name:       VOI Calculator
  * Plugin URI:        https://niftyfiftysolutions.com/
  * Description:       A two-stage ROI calculator for Visual Storage Intelligence.
- * Version:           1.0.1
+ * Version:           1.1.2
  * Author:            Nifty Fifty Solution
  * Author URI:        https://niftyfiftysolutions.com/
  * License:           GPL v2 or later
@@ -16,13 +16,31 @@ if ( ! defined( 'WPINC' ) ) {
 	die;
 }
 
+// --- DEBUGGING ---
+// Enable WP_DEBUG mode
+if ( ! defined( 'WP_DEBUG' ) ) {
+    define( 'WP_DEBUG', true );
+}
+// Enable Debug logging to the /wp-content/debug.log file
+if ( ! defined( 'WP_DEBUG_LOG' ) ) {
+    define( 'WP_DEBUG_LOG', true );
+}
+// Disable display of errors and warnings
+if ( ! defined( 'WP_DEBUG_DISPLAY' ) ) {
+    define( 'WP_DEBUG_DISPLAY', false );
+}
+// --- END DEBUGGING ---
+
+
 // Define plugin constants
-define( 'VOI_CALCULATOR_VERSION', '1.0.1' );
+define( 'VOI_CALCULATOR_VERSION', '1.1.2' );
 define( 'VOI_CALCULATOR_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'VOI_CALCULATOR_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
 // Include required files
 require_once VOI_CALCULATOR_PLUGIN_DIR . 'includes/class-voi-calculator-admin.php';
+require_once VOI_CALCULATOR_PLUGIN_DIR . 'includes/class-voi-calculator-pdf-generator.php';
+require_once VOI_CALCULATOR_PLUGIN_DIR . 'vendor/tcpdf.php';
 
 /**
  * The code that runs during plugin activation.
@@ -41,11 +59,19 @@ function voi_calculator_activate() {
         company_url varchar(255) DEFAULT '' NOT NULL,
         full_name varchar(255) NOT NULL,
         email varchar(100) NOT NULL,
+        pdf_link varchar(255) DEFAULT '' NOT NULL,
         PRIMARY KEY  (id)
     ) $charset_collate;";
 
     require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
     dbDelta( $sql );
+
+    // Create a directory for storing generated PDFs
+    $upload_dir = wp_upload_dir();
+    $pdf_dir = $upload_dir['basedir'] . '/voi-calculator-pdfs';
+    if (!is_dir($pdf_dir)) {
+        wp_mkdir_p($pdf_dir);
+    }
 }
 register_activation_hook( __FILE__, 'voi_calculator_activate' );
 
@@ -53,7 +79,6 @@ register_activation_hook( __FILE__, 'voi_calculator_activate' );
  * Enqueue scripts and styles.
  */
 function voi_calculator_enqueue_assets() {
-    // Only load on pages with the shortcode to optimize performance.
     if ( is_a( get_post( get_the_ID() ), 'WP_Post' ) && has_shortcode( get_post( get_the_ID() )->post_content, 'voi_calculator' ) ) {
         wp_enqueue_style(
             'voi-calculator-style',
@@ -92,41 +117,59 @@ add_shortcode( 'voi_calculator', 'voi_calculator_form_shortcode' );
  * Handle the AJAX form submission.
  */
 function voi_handle_form_submission() {
+    error_log('VOI Calculator: AJAX handler started.');
+
     if ( ! check_ajax_referer( 'voi_calculator_nonce', 'nonce', false ) ) {
-        wp_send_json_error( ['message' => 'Security check failed. Please refresh the page and try again.'], 403 );
+        error_log('VOI Calculator: Nonce verification failed.');
+        wp_send_json_error( ['message' => 'Security check failed.'], 403 );
         return;
     }
+    error_log('VOI Calculator: Nonce verified.');
 
-    $required_fields = ['total_tb', 'total_vms', 'company_name', 'company_url', 'full_name', 'email'];
-    foreach($required_fields as $field) {
-        if (empty($_POST[$field])) {
-            wp_send_json_error(['message' => 'Please fill out all required fields.'], 400);
-            return;
-        }
+    $form_data = [
+        'total_tb'     => isset($_POST['total_tb']) ? intval($_POST['total_tb']) : 0,
+        'total_vms'    => isset($_POST['total_vms']) ? intval($_POST['total_vms']) : 0,
+        'company_name' => isset($_POST['company_name']) ? sanitize_text_field($_POST['company_name']) : '',
+        'company_url'  => isset($_POST['company_url']) ? esc_url_raw($_POST['company_url']) : '',
+        'full_name'    => isset($_POST['full_name']) ? sanitize_text_field($_POST['full_name']) : '',
+        'email'        => isset($_POST['email']) ? sanitize_email($_POST['email']) : '',
+    ];
+    error_log('VOI Calculator: Form data sanitized: ' . print_r($form_data, true));
+
+    // Generate PDF
+    error_log('VOI Calculator: Initializing PDF generator.');
+    $pdf_generator = new VOI_Calculator_PDF_Generator($form_data);
+    $pdf_result = $pdf_generator->generate();
+    error_log('VOI Calculator: PDF generation attempted.');
+
+    if (is_wp_error($pdf_result)) {
+        error_log('VOI Calculator: PDF generation failed. Error: ' . $pdf_result->get_error_message());
+        wp_send_json_error(['message' => 'PDF Generation Error: ' . $pdf_result->get_error_message()], 500);
+        return;
     }
+    error_log('VOI Calculator: PDF generated successfully. Path: ' . $pdf_result['url']);
 
     global $wpdb;
     $table_name = $wpdb->prefix . 'voi_submissions';
 
-    $data = [
-        'time'         => current_time('mysql'),
-        'total_tb'     => intval($_POST['total_tb']),
-        'total_vms'    => intval($_POST['total_vms']),
-        'company_name' => sanitize_text_field($_POST['company_name']),
-        'company_url'  => esc_url_raw($_POST['company_url']),
-        'full_name'    => sanitize_text_field($_POST['full_name']),
-        'email'        => sanitize_email($_POST['email']),
-    ];
+    $db_data = $form_data;
+    $db_data['time'] = current_time('mysql');
+    $db_data['pdf_link'] = $pdf_result['url'];
 
-    $result = $wpdb->insert($table_name, $data);
+    error_log('VOI Calculator: Inserting data into database.');
+    $result = $wpdb->insert($table_name, $db_data);
 
     if ($result) {
-        // Here we will later add the PDF generation and email logic.
-        // For now, we just confirm submission.
-        wp_send_json_success(['message' => 'Thank you! Your submission has been received.']);
+        error_log('VOI Calculator: Database insert successful.');
+        wp_send_json_success([
+            'message' => 'Your value document has been generated successfully!',
+            'pdf_url' => $pdf_result['url']
+        ]);
     } else {
-        wp_send_json_error(['message' => 'There was an error saving your data. Please try again.'], 500);
+        error_log('VOI Calculator: Database insert failed. DB Error: ' . $wpdb->last_error);
+        wp_send_json_error(['message' => 'There was an error saving your data to the database.'], 500);
     }
+    error_log('VOI Calculator: AJAX handler finished.');
 }
 add_action( 'wp_ajax_voi_handle_form_submission', 'voi_handle_form_submission' );
 add_action( 'wp_ajax_nopriv_voi_handle_form_submission', 'voi_handle_form_submission' );
