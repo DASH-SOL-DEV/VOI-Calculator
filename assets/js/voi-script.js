@@ -2,12 +2,26 @@
     'use strict';
 
     $(document).ready(function() {
+        // This function displays the results. It's used by both AJAX success and page load.
+        function displayResults(html, pdfUrl) {
+            var resultsWrapper = $('#voi-calculator-results');
+            var formWrapper = $('.voi-form-wrapper');
+
+            var actionButtons = `
+                <div class="results-actions">
+                    <a href="${pdfUrl}" target="_blank" class="voi-download-button">Download PDF</a>
+                    <button type="button" class="voi-calculate-again-button">Calculate Again</button>
+                </div>`;
+
+            resultsWrapper.html(html + actionButtons);
+            formWrapper.hide();
+            resultsWrapper.show();
+        }
+
         $('#voi-calculator-form').on('submit', function(e) {
             e.preventDefault();
 
             var form = $(this);
-            var formWrapper = $('.voi-form-wrapper');
-            var resultsWrapper = $('#voi-calculator-results');
             var messageDiv = $('#voi-form-message');
             var submitButton = form.find('.voi-submit-button');
             var originalButtonText = submitButton.text();
@@ -22,18 +36,11 @@
                 },
                 success: function(response) {
                     if (response.success) {
-                        var resultsHtml = response.data.html_output;
-                        var pdfUrl = response.data.pdf_url;
+                        displayResults(response.data.html_output, response.data.pdf_url);
 
-                        var actionButtons = `
-                            <div class="results-actions">
-                                <a href="${pdfUrl}" target="_blank" class="voi-download-button">Download PDF</a>
-                                <button type="button" class="voi-calculate-again-button">Calculate Again</button>
-                            </div>`;
-
-                        resultsWrapper.html(resultsHtml + actionButtons);
-                        formWrapper.hide();
-                        resultsWrapper.show();
+                        // Update URL to allow for refresh
+                        var newUrl = window.location.pathname + '?submission_id=' + response.data.submission_id;
+                        window.history.pushState({path: newUrl}, '', newUrl);
 
                     } else {
                         messageDiv.addClass('error').text(response.data.message).show();
@@ -57,6 +64,8 @@
             $('#voi-calculator-results').hide().html('');
             $('#voi-calculator-form')[0].reset();
             $('.voi-form-wrapper').show();
+            // Remove the parameter from the URL
+            window.history.pushState({path: window.location.pathname}, '', window.location.pathname);
         });
     });
 

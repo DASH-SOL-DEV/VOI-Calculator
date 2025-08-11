@@ -1,5 +1,5 @@
 <div id="voi-calculator-container" class="voi-calculator-container">
-    <div class="voi-form-wrapper">
+    <div class="voi-form-wrapper" <?php if ($show_results) echo 'style="display:none;"'; ?>>
         <div class="voi-header">
             <h2>Simplified Value Calculator</h2>
             <p>This calculator uses industry standard values to show the value of Visual One Intelligence.</p>
@@ -37,7 +37,13 @@
             </div>
         </form>
     </div>
-    <div id="voi-calculator-results" style="display:none;">
-        <!-- AJAX results will be loaded here -->
+    <div id="voi-calculator-results" <?php if (!$show_results) echo 'style="display:none;"'; ?>>
+        <?php if ($show_results) : ?>
+            <?php echo $results_data['roi_html']; ?>
+            <div class="results-actions">
+                <a href="<?php echo esc_url($results_data['pdf_url']); ?>" target="_blank" class="voi-download-button">Download PDF</a>
+                <button type="button" class="voi-calculate-again-button">Calculate Again</button>
+            </div>
+        <?php endif; ?>
     </div>
 </div>

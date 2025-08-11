@@ -3,7 +3,7 @@
  * Plugin Name:       VOI Calculator
  * Plugin URI:        https://niftyfiftysolutions.com/
  * Description:       A two-stage ROI calculator for Visual Storage Intelligence.
- * Version:           1.2.0
+ * Version:           1.5.1
  * Author:            Nifty Fifty Solution
  * Author URI:        https://niftyfiftysolutions.com/
  * License:           GPL v2 or later
@@ -13,13 +13,21 @@
 
 if ( ! defined( 'WPINC' ) ) die;
 
-define( 'VOI_CALCULATOR_VERSION', '1.2.0' );
+define( 'VOI_CALCULATOR_VERSION', '1.5.1' );
 define( 'VOI_CALCULATOR_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'VOI_CALCULATOR_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
 require_once VOI_CALCULATOR_PLUGIN_DIR . 'includes/class-voi-calculator-admin.php';
 require_once VOI_CALCULATOR_PLUGIN_DIR . 'includes/class-voi-calculator-pdf-generator.php';
 require_once VOI_CALCULATOR_PLUGIN_DIR . 'vendor/tcpdf.php';
+
+// Start session on init
+add_action('init', 'voi_calculator_session_start');
+function voi_calculator_session_start() {
+    if (!session_id()) {
+        session_start();
+    }
+}
 
 register_activation_hook( __FILE__, 'voi_calculator_activate' );
 function voi_calculator_activate() {
@@ -56,6 +64,26 @@ function voi_calculator_enqueue_assets() {
 
 add_shortcode( 'voi_calculator', 'voi_calculator_form_shortcode' );
 function voi_calculator_form_shortcode() {
+    $submission_id = isset($_GET['submission_id']) ? intval($_GET['submission_id']) : 0;
+    $session_id = isset($_SESSION['voi_submission_id']) ? intval($_SESSION['voi_submission_id']) : 0;
+    
+    $show_results = false;
+    $results_data = [];
+
+    if ($submission_id > 0 && $submission_id === $session_id) {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'voi_submissions';
+        $submission = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_name WHERE id = %d", $submission_id), ARRAY_A);
+
+        if ($submission) {
+            $show_results = true;
+            $generator = new VOI_Calculator_PDF_Generator($submission);
+            $pdf_result = $generator->generate(); 
+            $results_data['roi_html'] = $pdf_result['html'];
+            $results_data['pdf_url'] = $submission['pdf_link'];
+        }
+    }
+
     ob_start();
     include VOI_CALCULATOR_PLUGIN_DIR . 'public/partials/form-display.php';
     return ob_get_clean();
@@ -92,10 +120,15 @@ function voi_handle_form_submission() {
     $db_data['time'] = current_time('mysql');
     $db_data['pdf_link'] = $pdf_result['url'];
     $result = $wpdb->insert($table_name, $db_data);
+    $submission_id = $wpdb->insert_id;
 
     if ($result) {
+        $_SESSION['voi_submission_id'] = $submission_id;
+        // Force session data to be written immediately.
+        session_write_close(); 
+        
         wp_send_json_success([
-            'message' => 'Your value document has been generated successfully!',
+            'submission_id' => $submission_id,
             'pdf_url' => $pdf_result['url'],
             'html_output' => $pdf_result['html']
         ]);
