@@ -2,8 +2,8 @@
 /**
  * Plugin Name:       VOI Calculator
  * Plugin URI:        https://niftyfiftysolutions.com/
- * Description:       A two-stage ROI calculator for Visual Storage Intelligence.
- * Version:           1.5.1
+ * Description:       A two-stage ROI calculator for Visual Storage Intelligence with HubSpot integration and email notifications.
+ * Version:           1.7.0
  * Author:            Nifty Fifty Solution
  * Author URI:        https://niftyfiftysolutions.com/
  * License:           GPL v2 or later
@@ -13,12 +13,17 @@
 
 if ( ! defined( 'WPINC' ) ) die;
 
-define( 'VOI_CALCULATOR_VERSION', '1.5.1' );
+define( 'VOI_CALCULATOR_VERSION', '1.7.0' );
 define( 'VOI_CALCULATOR_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'VOI_CALCULATOR_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
+// Include all required classes
 require_once VOI_CALCULATOR_PLUGIN_DIR . 'includes/class-voi-calculator-admin.php';
 require_once VOI_CALCULATOR_PLUGIN_DIR . 'includes/class-voi-calculator-pdf-generator.php';
+require_once VOI_CALCULATOR_PLUGIN_DIR . 'includes/class-voi-hubspot-integration.php';
+require_once VOI_CALCULATOR_PLUGIN_DIR . 'includes/class-voi-hubspot-settings.php';
+require_once VOI_CALCULATOR_PLUGIN_DIR . 'includes/class-voi-email-system.php';
+require_once VOI_CALCULATOR_PLUGIN_DIR . 'includes/class-voi-email-settings.php';
 require_once VOI_CALCULATOR_PLUGIN_DIR . 'vendor/tcpdf.php';
 
 // Start session on init
@@ -44,13 +49,21 @@ function voi_calculator_activate() {
         full_name varchar(255) NOT NULL,
         email varchar(100) NOT NULL,
         pdf_link varchar(255) DEFAULT '' NOT NULL,
+        hubspot_contact_id varchar(50) DEFAULT '' NOT NULL,
+        hubspot_sent datetime DEFAULT NULL,
+        email_sent tinyint(1) DEFAULT 0,
+        email_sent_time datetime DEFAULT NULL,
         PRIMARY KEY  (id)
     ) $charset_collate;";
     require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
     dbDelta( $sql );
+    
+    // Create upload directories
     $upload_dir = wp_upload_dir();
     $pdf_dir = $upload_dir['basedir'] . '/voi-calculator-pdfs';
+    $email_dir = $upload_dir['basedir'] . '/voi-email-attachments';
     if (!is_dir($pdf_dir)) wp_mkdir_p($pdf_dir);
+    if (!is_dir($email_dir)) wp_mkdir_p($email_dir);
 }
 
 add_action( 'wp_enqueue_scripts', 'voi_calculator_enqueue_assets' );
@@ -106,6 +119,7 @@ function voi_handle_form_submission() {
         'email'        => isset($_POST['email']) ? sanitize_email($_POST['email']) : '',
     ];
 
+    // Generate PDF
     $pdf_generator = new VOI_Calculator_PDF_Generator($form_data);
     $pdf_result = $pdf_generator->generate();
 
@@ -114,6 +128,7 @@ function voi_handle_form_submission() {
         return;
     }
 
+    // Save to database
     global $wpdb;
     $table_name = $wpdb->prefix . 'voi_submissions';
     $db_data = $form_data;
@@ -124,8 +139,34 @@ function voi_handle_form_submission() {
 
     if ($result) {
         $_SESSION['voi_submission_id'] = $submission_id;
-        // Force session data to be written immediately.
-        session_write_close(); 
+        session_write_close();
+        
+        // Send to HubSpot if enabled
+        $hubspot_enabled = get_option('voi_hubspot_enabled', false);
+        if ($hubspot_enabled) {
+            $hubspot = new VOI_HubSpot_Integration();
+            $hubspot_result = $hubspot->create_or_update_contact($form_data);
+            
+            if (is_wp_error($hubspot_result)) {
+                error_log('VOI Calculator - HubSpot integration failed for ' . $form_data['email'] . ': ' . $hubspot_result->get_error_message());
+            } else {
+                $hubspot_contact_id = isset($hubspot_result['id']) ? $hubspot_result['id'] : '';
+                error_log('VOI Calculator - Successfully sent data to HubSpot for: ' . $form_data['email']);
+                
+                // Update database with HubSpot info
+                $wpdb->update(
+                    $table_name,
+                    [
+                        'hubspot_contact_id' => $hubspot_contact_id,
+                        'hubspot_sent' => current_time('mysql')
+                    ],
+                    ['id' => $submission_id]
+                );
+            }
+        }
+        
+        // Trigger email notification
+        do_action('voi_form_submitted', $form_data, $pdf_result['path'], $submission_id);
         
         wp_send_json_success([
             'submission_id' => $submission_id,
@@ -137,5 +178,24 @@ function voi_handle_form_submission() {
     }
 }
 
-$voi_admin = new VOI_Calculator_Admin();
-$voi_admin->init();
+// Initialize all systems
+add_action('plugins_loaded', 'voi_calculator_init_systems');
+function voi_calculator_init_systems() {
+    // Initialize admin system
+    $voi_admin = new VOI_Calculator_Admin();
+    $voi_admin->init();
+    
+    // Initialize HubSpot system
+    if (class_exists('VOI_HubSpot_Settings')) {
+        new VOI_HubSpot_Settings();
+    }
+    
+    // Initialize email system
+    if (class_exists('VOI_Email_System')) {
+        new VOI_Email_System();
+    }
+    
+    if (class_exists('VOI_Email_Settings')) {
+        new VOI_Email_Settings();
+    }
+}
